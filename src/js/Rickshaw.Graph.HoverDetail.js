@@ -53,8 +53,9 @@ Rickshaw.Graph.HoverDetail = Rickshaw.Class.create({
 		var nearestPoint;
 
 		this.graph.series.active().forEach( function(series) {
-
-			var data = this.graph.stackedData[j++];
+      
+			var data = this.graph.stackedData[j++]
+                 .filter( function(d) { return !(d.preventHover) }, this );
 
 			if (!data.length)
 				return;

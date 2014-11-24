@@ -153,11 +153,71 @@ Rickshaw.Graph = function(args) {
 
 	this.update = this.render;
 
+  this._findYIntercept = function(p1, p2, xOffset) {
+    if (p2.x - p1.x === 0) {
+      return null;
+    }
+
+    if (xOffset === undefined) {
+      xOffset = 0;
+    }
+
+    var newPoint = {};
+    newPoint.x = xOffset;
+    newPoint.y = p1.y + ((xOffset - p1.x) / (p2.x - p1.x)) * (p2.y - p1.y);
+    return newPoint;
+  };
+
 	this.stackData = function() {
 
-		var data = this.series.active()
-			.map( function(d) { return d.data } )
+		var allData = this.series.active()
+			.map( function(d) { return d.data } );
+
+    var data = allData
 			.map( function(d) { return d.filter( function(d) { return this._slice(d) }, this ) }, this);
+
+    allData.forEach(function(d, idx) {
+      var end = this._getEndPoints(d);
+      var newD;
+
+      // Connect the initial datapoint with the first point before the range
+      if (end[0] !== undefined) {
+        var initialDataPoint = data[idx][0];
+        if (initialDataPoint || end[1]) {
+          // If there's no data in the range then use the first point
+          // after the range instead
+          if(!(initialDataPoint)) {
+            initialDataPoint = end[1];
+          }
+
+          newD = this._findYIntercept(end[0], initialDataPoint, parseInt(this.window.xMin));
+          if (newD) {
+            // Signal to HoverDetail not to add hover information for this point
+            newD.preventHover = true;
+            data[idx].unshift(newD);
+          }
+        }
+      }
+
+      // Connect the final datapoint with the first point after the range
+      if (end[1] !== undefined) {
+        var finalDataPoint = data[idx].slice(-1)[0];
+        if (finalDataPoint || end[0]) {
+          // If there's no data in the range then use the first point
+          // before the range instead
+          if (!finalDataPoint) {
+            finalDataPoint = end[0];
+          }
+
+          newD = this._findYIntercept(finalDataPoint, end[1], parseInt(this.window.xMax));
+          if (newD) {
+            // Signal to HoverDetail not to add hover information for this point
+            newD.preventHover = true;
+            data[idx].push(newD);
+          }
+        }
+      }
+    }, this);
 
 		var preserve = this.preserve;
 		if (!preserve) {
@@ -240,6 +300,21 @@ Rickshaw.Graph = function(args) {
 	};
 
 	this.stackData.hooks = { data: [], after: [] };
+
+  this._getEndPoints = function(data) {
+    var endPoints = [undefined, undefined];
+    if (this.window.xMin || this.window.xMax) {
+      data.forEach(function(d, idx) {
+        if (!(endPoints[0]) && this.window.xMin && d.x > this.window.xMin) {
+          endPoints[0] = data[idx - 1];
+        }
+        if (!(endPoints[1]) && this.window.xMax && d.x > this.window.xMax) {
+        endPoints[1] = d;
+        }
+      }, this);
+    }
+    return endPoints;
+  };
 
 	this._slice = function(d) {
 
