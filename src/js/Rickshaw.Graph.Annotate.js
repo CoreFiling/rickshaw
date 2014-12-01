@@ -64,9 +64,11 @@ Rickshaw.Graph.Annotate = function(args) {
 					element.innerHTML = box.content;
 					annotation.element.appendChild(element);
 
-					annotation.line = document.createElement('div');
-					annotation.line.classList.add('annotation_line');
-					self.graph.element.appendChild(annotation.line);
+          if (!annotation.line) {
+            annotation.line = document.createElement('div');
+            annotation.line.classList.add('annotation_line');
+            self.graph.element.appendChild(annotation.line);
+          }
 
 					if ( box.end ) {
 						box.rangeElement = document.createElement('div');
