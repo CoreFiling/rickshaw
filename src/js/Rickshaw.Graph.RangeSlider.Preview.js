@@ -46,6 +46,7 @@ Rickshaw.Graph.RangeSlider.Preview = Rickshaw.Class.create({
 
 		this.configure(args);
 		this.render();
+
 	},
 
 	onSlide: function(callback) {
@@ -404,7 +405,7 @@ Rickshaw.Graph.RangeSlider.Preview = Rickshaw.Class.create({
 				graph.window.xMin = windowAfterDrag[0];
 				graph.window.xMax = windowAfterDrag[1];
 
-				graph.update();
+				self.render();
 			});
 		}
 
@@ -438,6 +439,10 @@ Rickshaw.Graph.RangeSlider.Preview = Rickshaw.Class.create({
 		}
 
 		function onMouseup(datum, index) {
+			self.graphs.forEach(function(graph) {
+				graph.update();
+			});
+
 			d3.select(document).on("mousemove.rickshaw_range_slider_preview", null);
 			d3.select(document).on("mouseup.rickshaw_range_slider_preview", null);
 			d3.select(document).on("touchmove.rickshaw_range_slider_preview", null);
