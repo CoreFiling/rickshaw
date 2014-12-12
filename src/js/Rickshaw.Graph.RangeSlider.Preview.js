@@ -46,7 +46,6 @@ Rickshaw.Graph.RangeSlider.Preview = Rickshaw.Class.create({
 
 		this.configure(args);
 		this.render();
-
 	},
 
 	onSlide: function(callback) {
@@ -164,9 +163,19 @@ Rickshaw.Graph.RangeSlider.Preview = Rickshaw.Class.create({
 		// Use the first graph as the "master" for the frame state
 		var masterGraph = this.graphs[0];
 
+		var dataDomain = masterGraph.dataDomain();
+		var min = dataDomain[0];
+		var max = dataDomain[1];
+		if (masterGraph.window.xMin !== undefined && masterGraph.window.xMin < dataDomain[0]) {
+			min = masterGraph.window.xMin;
+		}
+		if (masterGraph.window.xMax !== undefined && masterGraph.window.xMax > dataDomain[1]) {
+			max = masterGraph.window.xMax;
+		}
+
 		var domainScale = d3.scale.linear()
 			.domain([0, this.previewWidth])
-			.range(masterGraph.dataDomain());
+		.range([min, max]);
 
 		var currentWindow = [masterGraph.window.xMin, masterGraph.window.xMax];
 
