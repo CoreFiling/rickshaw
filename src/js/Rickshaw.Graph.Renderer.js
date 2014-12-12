@@ -69,12 +69,15 @@ Rickshaw.Graph.Renderer = Rickshaw.Class.create( {
 			yMax += (yMax - yMin) * this.padding.top;
 		}
 
-		if (this.graph.window.xMax !== undefined) {
-			xMax = this.graph.window.xMax;
+		var windowXmax = this.graph.window.xMax;
+		var windowXmin = this.graph.window.xMin;
+
+		if (windowXmax !== undefined && windowXmax < xMax) {
+			xMax = windowXmax;
 		}
 
-		if (this.graph.window.xMin !== undefined) {
-			xMin = this.graph.window.xMin;
+		if (windowXmin !== undefined && windowXmin > xMin) {
+			xMin = windowXmin;
 		}
 
     return { x: [xMin, xMax], y: [yMin, yMax] };
