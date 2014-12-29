@@ -18,6 +18,86 @@ exports.tearDown = function(callback) {
 	callback();
 };
 
+exports.reduceData = function(test) {
+	// document comes from jsdom
+	var el = document.createElement("div");
+
+	var graph = new Rickshaw.Graph({
+		element: el,
+		width: 960,
+		height: 500,
+		renderer: 'line',
+		series: [
+			{
+				color: 'steelblue',
+				data: [
+					{ x: 0, y: 0 },
+					{ x: 1, y: 1 },
+					{ x: 2, y: 3 },
+					{ x: 3, y: 2 },
+					{ x: 12, y: 4 },
+					{ x: 13, y: 2 },
+					{ x: 14, y: 7 },
+					{ x: 15, y: 6 },
+					{ x: 16, y: 8 },
+					{ x: 20, y: 9 },
+			    { x: 21, y: 10 },
+			    { x: 22, y: 11 },
+					{ x: 23, y: 12 },
+					{ x: 24, y: 13 },
+					{ x: 28, y: 1 },
+					{ x: 29, y: 2 },
+					{ x: 30, y: 3 },
+					{ x: 31, y: 4 },
+					{ x: 32, y: 3 }
+				]
+			},
+			{ data: [] } // test that _reduceData can handle empty series
+		]
+	});
+
+	var seriesData = graph.series.map(function(s) { return s.stack });
+
+	graph.renderer.steps = seriesData[0].length;
+	test.deepEqual(seriesData[0], graph.renderer._reduceData(seriesData)[0], "Number of steps equal to the number of data points should not change the data");
+
+	graph.renderer.steps = 4;
+	expected =	[
+								// 1st segment
+								{x: 0, y: 0, y0: 0},  // minY
+								{x: 2, y: 3, y0: 0},  // maxY
+								{x: 3, y: 2, y0: 0},  // last
+								{x: 12, y: 4, y0: 0}, // selected point
+
+								// 2nd segment
+								{x: 13, y: 2, y0: 0}, // minY (also minY for 3rd segment)
+								{x: 14, y: 7, y0: 0}, // maxY
+								{x: 15, y: 6, y0: 0}, // last
+								{x: 16, y: 8, y0: 0}, // selected point
+
+								// 3rd segment
+								{x: 23, y: 12, y0: 0}, // last
+								{x: 24, y: 13, y0: 0}, // step + maxY (also maxY for 4th segment)
+
+								// 4th segment
+								{x: 28, y: 1, y0: 0}, // minY
+								{x: 31, y: 4, y0: 0}, // last + maxY
+								{x: 32, y: 3, y0: 0}  // step
+							];
+
+	test.deepEqual(expected, graph.renderer._reduceData(seriesData)[0], "Multiple segments");
+	test.deepEqual([], graph.renderer._reduceData(seriesData)[1], "Empty series preserved");
+
+	var testData = [];
+	for (var i=0; i < 10000; i++) {
+		testData.push({x: i, y: Math.random()});
+	}
+	graph.renderer.steps = STEPS = 500;
+	test.ok(graph.renderer._reduceData([testData])[0].length <= STEPS * 4, "Total number of points should be less than or equal to 4 times the number of steps");
+
+	test.done();
+};
+
 exports.domain = function(test) {
 
 	// document comes from jsdom

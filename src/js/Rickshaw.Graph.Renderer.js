@@ -5,6 +5,8 @@ Rickshaw.Graph.Renderer = Rickshaw.Class.create( {
 	initialize: function(args) {
 		this.graph = args.graph;
 		this.tension = args.tension || this.tension;
+		this.useReducedData = args.useReducedData || this.useReducedData;
+		this.steps = args.steps || this.steps;
 		this.configure(args);
 	},
 
@@ -23,7 +25,9 @@ Rickshaw.Graph.Renderer = Rickshaw.Class.create( {
 			unstack: true,
 			padding: { top: 0.01, right: 0, bottom: 0.01, left: 0 },
 			stroke: false,
-			fill: false
+			fill: false,
+			useReducedData: true,
+			steps: 500
 		};
 	},
 
@@ -98,6 +102,10 @@ Rickshaw.Graph.Renderer = Rickshaw.Class.create( {
 			.filter(function(s) { return !s.disabled })
 			.map(function(s) { return s.stack });
 
+		if (this.useReducedData) {
+			data = this._reduceData(data);
+		}
+
 		var pathNodes = vis.selectAll("path.path")
 			.data(data)
 			.enter().append("svg:path")
@@ -121,6 +129,76 @@ Rickshaw.Graph.Renderer = Rickshaw.Class.create( {
 			i++;
 		}, this );
 
+	},
+
+	_reduceData: function(data) {
+		return data.map(
+			function(s) {
+				if (s.length === 0) {
+					return [];
+				}
+				else {
+					var newSeries = [];
+					var min = this.graph.window.xMin;
+					if (min === undefined) {
+						min = s[0].x;
+					}
+					var max = this.graph.window.xMax;
+					if (max === undefined) {
+						max = s.slice(-1)[0].x;
+					}
+
+					var step = (max - min) / this.steps;
+
+					var last = {};
+					var addedX = [];
+
+					s.forEach( function(d) {
+						var rounded = Math.floor(d.x / step);
+						if (last.rounded != rounded) {
+							if (last.lastx !== undefined) {
+								if (last.minx < last.maxx && addedX.indexOf(last.minx) == -1) {
+									newSeries.push({x: last.minx, y: last.min, y0: last.miny0});
+									addedX.push(last.minx);
+								}
+								if (addedX.indexOf(last.maxx) == -1) {
+									newSeries.push({x: last.maxx, y: last.max, y0: last.maxy0});
+									addedX.push(last.maxx);
+								}
+								if (last.minx > last.maxx && addedX.indexOf(last.minx) == -1) {
+									newSeries.push({x: last.minx, y: last.min, y0: last.miny0});
+									addedX.push(last.minx);
+								}
+								if (addedX.indexOf(last.lastx) == -1) {
+									newSeries.push({x: last.lastx, y: last.lasty, y0: last.y0});
+									addedX.push(last.lastx);
+								}
+							}
+							last = {rounded: rounded, minx: d.x, maxx: d.x, min: d.y, max: d.y, y0: d.y0};
+							if (addedX.indexOf(d.x) == -1) {
+								newSeries.push(d);
+								addedX.push(d.x);
+							}
+						}
+						else {
+							if (d.y < last.min) {
+								last.min = d.y;
+								last.minx = d.x;
+								last.miny0 = d.y0;
+							}
+							else if (d.y > last.max) {
+								last.max = d.y;
+								last.maxx = d.x;
+								last.maxy0 = d.y0;
+							}
+							last.lastx = d.x;
+							last.lasty = d.y;
+							last.y0 = d.y0;
+						}
+					});
+					return newSeries;
+				}
+		}, this);
 	},
 
 	_styleSeries: function(series) {
