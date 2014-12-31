@@ -338,13 +338,13 @@ Rickshaw.Graph.RangeSlider.Preview = Rickshaw.Class.create({
 			stop: null,
 			left: false,
 			right: false,
-			rigid: false
+			rigid: false,
+			dimming: false
 		};
 
 		var self = this;
 
 		function onMousemove(datum, index) {
-
 			drag.stop = self._getClientXFromEvent(d3.event, drag);
 			var distanceTraveled = drag.stop - drag.start;
 			var frameAfterDrag = self.frameBeforeDrag.slice(0);
@@ -411,12 +411,25 @@ Rickshaw.Graph.RangeSlider.Preview = Rickshaw.Class.create({
 
 		function onMousedown() {
 			drag.target = d3.event.target;
-			drag.start = self._getClientXFromEvent(d3.event, drag);
 			self.frameBeforeDrag = self.currentFrame.slice();
+			if (drag.dimming) {
+				// start the drag from the middle of the frame
+				drag.start = self.config.frameHandleThickness + d3.select("path.frame").node().getBoundingClientRect().left + (self.frameBeforeDrag[1] - self.frameBeforeDrag[0]) / 2;
+			}
+			else {
+				drag.start = self._getClientXFromEvent(d3.event, drag);
+			}
 			d3.event.preventDefault ? d3.event.preventDefault() : d3.event.returnValue = false;
-			d3.select(document).on("mousemove.rickshaw_range_slider_preview", onMousemove);
+			if (drag.dimming) {
+				d3.select(document).on("mouseup.rickshaw_range_slider_preview_dimming", onMousemove);
+				d3.select(document).on("touchend.rickshaw_range_slider_preview_dimming", onMousemove);
+				d3.select(document).on("touchcancel.rickshaw_range_slider_preview_dimming", onMousemove);
+			}
+			else {
+				d3.select(document).on("mousemove.rickshaw_range_slider_preview", onMousemove);
+				d3.select(document).on("touchmove.rickshaw_range_slider_preview", onMousemove);
+			}
 			d3.select(document).on("mouseup.rickshaw_range_slider_preview", onMouseup);
-			d3.select(document).on("touchmove.rickshaw_range_slider_preview", onMousemove);
 			d3.select(document).on("touchend.rickshaw_range_slider_preview", onMouseup);
 			d3.select(document).on("touchcancel.rickshaw_range_slider_preview", onMouseup);
 		}
@@ -438,6 +451,14 @@ Rickshaw.Graph.RangeSlider.Preview = Rickshaw.Class.create({
 			onMousedown();
 		}
 
+		function onMousedownDimming(datum, index) {
+			drag.left = true;
+			drag.right = true;
+			drag.rigid = true;
+			drag.dimming = true;
+			onMousedown();
+		}
+
 		function onMouseup(datum, index) {
 			self.graphs.forEach(function(graph) {
 				graph.update();
@@ -448,18 +469,24 @@ Rickshaw.Graph.RangeSlider.Preview = Rickshaw.Class.create({
 			d3.select(document).on("touchmove.rickshaw_range_slider_preview", null);
 			d3.select(document).on("touchend.rickshaw_range_slider_preview", null);
 			d3.select(document).on("touchcancel.rickshaw_range_slider_preview", null);
+			d3.select(document).on("mouseup.rickshaw_range_slider_preview_dimming", null);
+			d3.select(document).on("touchend.rickshaw_range_slider_preview_dimming", null);
+			d3.select(document).on("touchcancel.rickshaw_range_slider_preview_dimming", null);
 			delete self.frameBeforeDrag;
 			drag.left = false;
 			drag.right = false;
 			drag.rigid = false;
+			drag.dimming = false;
 		}
 
 		element.select("rect.left_handle").on("mousedown", onMousedownLeftHandle);
 		element.select("rect.right_handle").on("mousedown", onMousedownRightHandle);
 		element.select("rect.middle_handle").on("mousedown", onMousedownMiddleHandle);
+		element.select("path.dimming").on("mousedown", onMousedownDimming);
 		element.select("rect.left_handle").on("touchstart", onMousedownLeftHandle);
 		element.select("rect.right_handle").on("touchstart", onMousedownRightHandle);
 		element.select("rect.middle_handle").on("touchstart", onMousedownMiddleHandle);
+		element.select("path.dimming").on("touchstart", onMousedownDimming);
 	},
 
 	_getClientXFromEvent: function(event, drag) {
