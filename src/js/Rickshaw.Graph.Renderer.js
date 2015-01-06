@@ -132,7 +132,26 @@ Rickshaw.Graph.Renderer = Rickshaw.Class.create( {
 	},
 
 	_reduceData: function(data) {
-		return data.map(
+    // This function reduces the number of points in the data, by splitting
+    // the data into a fixed number of segments (the number of segments is
+    // this.steps).
+    // For each segment up to 4 points from the original data are retained in
+    // the reduced data set:
+    // The first and last points within the segment
+    // The points with the minimum and maximum y values
+    //
+    // If this.steps is large enough to ensure that each segment covers just
+    // a couple pixels of width on the rendered chart then this reduced data
+    // will render almost identically to the full data set.
+    // It is important to retain the first and last points as data points may
+    // not be distributed evenly through time.  If the segment is immediately
+    // preceeded or followed by a long period of time without data then these
+    // points are important to make sure that the corresponding line segment
+    // is rendered at the correct vertical position.
+    // It is important to preserve the points with the minimum and maximum
+    // y values so that the shape of the chart is preserved, especially when
+    // it contains very narrow peaks and troughs.
+    return data.map(
 			function(s) {
 				if (s.length === 0) {
 					return [];
