@@ -16,6 +16,16 @@ Rickshaw.Graph.Annotate = function(args) {
 		self.data[time].boxes.push({content: content, end: end_time});
 	};
 
+  this.annotationClickHandler = function(annotation) {
+    return function(e) {
+      annotation.element.classList.toggle('active');
+      annotation.line.classList.toggle('active');
+      annotation.boxes.forEach( function(box) {
+        if ( box.rangeElement ) box.rangeElement.classList.toggle('active');
+      });
+    };
+  };
+
 	this.update = function() {
 
 		Rickshaw.keys(self.data).forEach( function(time) {
@@ -40,14 +50,7 @@ Rickshaw.Graph.Annotate = function(args) {
 				var element = annotation.element = document.createElement('div');
 				element.classList.add('annotation');
 				this.elements.timeline.appendChild(element);
-				element.addEventListener('click', function(e) {
-					element.classList.toggle('active');
-					annotation.line.classList.toggle('active');
-					annotation.boxes.forEach( function(box) {
-						if ( box.rangeElement ) box.rangeElement.classList.toggle('active');
-					});
-				}, false);
-					
+				element.addEventListener('click', self.annotationClickHandler(annotation), false);
 			}
 
 			annotation.element.style.left = left + 'px';
