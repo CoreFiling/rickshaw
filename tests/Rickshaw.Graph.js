@@ -317,6 +317,45 @@ exports.configure = function(test) {
 	test.done();
 };
 
+exports.xmax = function(test) {
+
+	var el = document.createElement('div');
+
+	var graph = new Rickshaw.Graph({
+		element: el,
+		width: 960,
+		height: 500,
+		padding: { top: 0.2 },
+		renderer: 'stack',
+		series: [ { data: [ { x: 1, y: 40 } ] } ]
+	});
+
+	test.deepEqual(graph.dataDomain(), [1, 1],
+		"x domain with no xmax");
+	
+	test.deepEqual(graph.renderer.domain().x, [1, 1],
+		"x domain with no xmax");
+
+	var MAX = 1234567890;
+	var graph = new Rickshaw.Graph({
+		element: el,
+		width: 960,
+		height: 500,
+		padding: { top: 0.2 },
+		xmax: MAX,
+		renderer: 'stack',
+		series: [ { data: [ { x: 1, y: 40 } ] } ]
+	});
+	
+	test.deepEqual(graph.dataDomain(), [1, MAX],
+		"x domain with no xmax");
+	
+	test.deepEqual(graph.renderer.domain().x, [1, MAX],
+		"x domain with no xmax");
+
+	test.done();
+};
+
 exports.rendererAutodiscover = function(test) {
 
 	var Rickshaw = require('../rickshaw');

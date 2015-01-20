@@ -75,13 +75,15 @@ Rickshaw.Graph.Renderer = Rickshaw.Class.create( {
 
 		var windowXmax = this.graph.window.xMax;
 		var windowXmin = this.graph.window.xMin;
-		var dataDomain = this.graph.dataDomain();
 
-		if (windowXmax !== undefined && windowXmax < dataDomain[1]) {
+		if (windowXmax !== undefined) {
 			xMax = windowXmax;
 		}
+    else if (this.graph.xmax !== undefined) {
+			xMax = this.graph.xmax;
+		}
 
-		if (windowXmin !== undefined && windowXmin > dataDomain[0]) {
+		if (windowXmin !== undefined) {
 			xMin = windowXmin;
 		}
 
